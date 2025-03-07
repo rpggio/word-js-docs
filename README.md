@@ -11,7 +11,7 @@ Sources copied 3/7/2025, not synchronized with latest.
 
 ## Output
 
-[Generated docs](./dist/index.md)
+[Generated docs](./docs/index.md)
 
 ## Dev
 

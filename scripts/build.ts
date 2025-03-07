@@ -92,7 +92,7 @@ async function generateIndexFile(
   let currentSection = "";
 
   for (const file of markdownFiles) {
-    // Extract section from path (e.g., "50-document" from "dist/50-document/file.md")
+    // Extract section from path (e.g., "50-document" from "docs/50-document/file.md")
     const pathParts = file.path.split("/");
     const section = pathParts.length > 1 ? pathParts[0] : "Other";
 
@@ -116,8 +116,8 @@ async function generateIndexFile(
   }
 
   // Write the index file
-  await fs.writeFile("dist/index.md", indexContent, "utf8");
-  console.log("Generated index file: dist/index.md");
+  await fs.writeFile("docs/index.md", indexContent, "utf8");
+  console.log("Generated index file: docs/index.md");
 }
 
 // Function to convert YAML file to markdown
@@ -184,13 +184,13 @@ async function main(): Promise<void> {
   try {
     const yamlFiles = glob.sync("samples/**/*.yaml");
 
-    // Clear and recreate the dist directory
-    await fs.remove("dist");
-    await fs.ensureDir("dist");
+    // Clear and recreate the docs directory
+    await fs.remove("docs");
+    await fs.ensureDir("docs");
 
-    // Copy office-js-types.d.ts to dist directory
-    await fs.copy("office-js-types.d.ts", "dist/office-js-types.d.ts");
-    console.log("Copied office-js-types.d.ts to dist directory");
+    // Copy office-js-types.d.ts to docs directory
+    await fs.copy("office-js-types.d.ts", "docs/office-js-types.d.ts");
+    console.log("Copied office-js-types.d.ts to docs directory");
 
     // Store information about each markdown file for the index
     const markdownFiles: Array<{
@@ -225,7 +225,7 @@ async function main(): Promise<void> {
       });
 
       // Convert YAML to markdown
-      await convertYamlToMarkdown(yamlFile, "dist");
+      await convertYamlToMarkdown(yamlFile, "docs");
     }
 
     // Generate index.md file
