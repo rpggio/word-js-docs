@@ -1,0 +1,72 @@
+# On deleting paragraphs
+
+Registers, triggers, and deregisters the onParagraphDeleted event that tracks the removal of paragraphs.
+
+This sample demonstrates how to use the onDeleted event with paragraphs.
+
+```typescript
+let eventContext;
+
+async function registerEventHandler() {
+  // Registers the onParagraphDeleted event handler on the document.
+  await Word.run(async (context) => {
+    eventContext = context.document.onParagraphDeleted.add(paragraphDeleted);
+    await context.sync();
+
+    console.log("Added event handlers for when paragraphs are deleted.");
+  });
+}
+
+async function paragraphDeleted(event: Word.ParagraphDeletedEventArgs) {
+  await Word.run(async (context) => {
+    console.log(`${event.type} event detected. IDs of paragraphs that were deleted:`, event.uniqueLocalIds);
+  });
+}
+
+async function deleteParagraph() {
+  await Word.run(async (context) => {
+    const paragraphs: Word.ParagraphCollection = context.document.body.paragraphs;
+    paragraphs.load("items");
+    await context.sync();
+
+    if (paragraphs.items.length == 0) {
+      console.log("There are no paragraphs in this document.");
+    } else {
+      console.log("Paragraph to be deleted:", paragraphs.items[0]);
+      paragraphs.items[0].delete();
+      await context.sync();
+    }
+  });
+}
+
+async function deregisterEventHandler() {
+  await Word.run(eventContext.context, async (context) => {
+    eventContext.remove();
+    await context.sync();
+  });
+
+  eventContext = null;
+  console.log("Removed event handler that was tracking when paragraphs are deleted.");
+}
+
+async function setup() {
+  await Word.run(async (context) => {
+    const body: Word.Body = context.document.body;
+    body.clear();
+    body.insertParagraph("Paragraph 1", "End");
+    body.insertParagraph("Paragraph 2", "End");
+    body.insertParagraph("Paragraph 3", "End");
+  });
+}
+
+// Default helper for invoking an action and handling errors.
+async function tryCatch(callback) {
+  try {
+    await callback();
+  } catch (error) {
+    // Note: In a production add-in, you'd want to notify the user through your add-in's UI.
+    console.error(error);
+  }
+}
+```
+

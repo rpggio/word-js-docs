@@ -1,0 +1,95 @@
+# Organize a list
+
+Shows how to create and organize a list.
+
+This sample demonstrates how to create and organize a list.
+
+```typescript
+async function insertOrganizeList() {
+  // Inserts a list starting with the first paragraph then set numbering and bullet types of the list items.
+  await Word.run(async (context) => {
+    const paragraphs: Word.ParagraphCollection = context.document.body.paragraphs;
+    paragraphs.load("$none");
+
+    await context.sync();
+
+    // Use the first paragraph to start a new list.
+    const list: Word.List = paragraphs.items[0].startNewList();
+    list.load("$none");
+
+    await context.sync();
+
+    // To add new items to the list, use Start or End on the insertLocation parameter.
+    list.insertParagraph("New list item at the start of the list", "Start");
+    const paragraph: Word.Paragraph = list.insertParagraph("New list item at the end of the list (set to list level 5)", "End");
+
+    // Set numbering for list level 1.
+    list.setLevelNumbering(0, Word.ListNumbering.arabic);
+
+    // Set bullet type for list level 5.
+    list.setLevelBullet(4, Word.ListBullet.arrow);
+
+    // Set list level for the last item in this list.
+    paragraph.listItem.level = 4;
+
+    list.load("levelTypes");
+
+    await context.sync();
+  });
+}
+
+async function getListProps() {
+  // Gets information about the first list in the document.
+  await Word.run(async (context) => {
+    const lists: Word.ListCollection = context.document.body.lists;
+    lists.load("items");
+
+    await context.sync();
+
+    if (lists.items.length === 0) {
+      console.warn("There are no lists in this document.");
+      return;
+    }
+    
+    // Get the first list.
+    const list: Word.List = lists.getFirst();
+    list.load("levelTypes,levelExistences");
+
+    await context.sync();
+
+    const levelTypes  = list.levelTypes;
+    console.log("Level types of the first list:");
+    for (let i = 0; i < levelTypes.length; i++) {
+      console.log(`- Level ${i + 1} (index ${i}): ${levelTypes[i]}`);
+    }
+
+    const levelExistences = list.levelExistences;
+    console.log("Level existences of the first list:");
+    for (let i = 0; i < levelExistences.length; i++) {
+      console.log(`- Level ${i + 1} (index ${i}): ${levelExistences[i]}`);
+    }
+  });
+}
+
+async function setup() {
+  await Word.run(async (context) => {
+    const body: Word.Body = context.document.body;
+    body.clear();
+    body.insertParagraph(
+      "Create a list then customize the numbering and bullets. You can also organize the list items into multiple levels and change the style, alignment, etc.",
+      "Start"
+    );
+  });
+}
+
+// Default helper for invoking an action and handling errors.
+async function tryCatch(callback) {
+  try {
+    await callback();
+  } catch (error) {
+    // Note: In a production add-in, you'd want to notify the user through your add-in's UI.
+    console.error(error);
+  }
+}
+```
+

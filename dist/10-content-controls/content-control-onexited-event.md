@@ -1,0 +1,101 @@
+# On exiting content controls
+
+Registers, triggers, and deregisters onExited event that tracks when the cursor is removed from within content controls.
+
+This sample demonstrates how to use the onExited event on content controls.
+
+```typescript
+let eventContexts = [];
+
+async function insertContentControls() {
+  // Traverses each paragraph of the document and wraps a content control on each.
+  await Word.run(async (context) => {
+    const paragraphs: Word.ParagraphCollection = context.document.body.paragraphs;
+    paragraphs.load("$none"); // Don't need any properties; just wrap each paragraph with a content control.
+
+    await context.sync();
+
+    for (let i = 0; i < paragraphs.items.length; i++) {
+      let contentControl = paragraphs.items[i].insertContentControl();
+      contentControl.tag = "forTesting";
+    }
+
+    console.log("Content controls inserted: " + paragraphs.items.length);
+
+    await context.sync();
+  });
+}
+
+async function registerEventHandlers() {
+  await Word.run(async (context) => {
+    const contentControls: Word.ContentControlCollection = context.document.contentControls;
+    contentControls.load("items");
+    await context.sync();
+
+    // Register the onExited event handler on each content control.
+    if (contentControls.items.length === 0) {
+      console.log("There aren't any content controls in this document so can't register event handlers.");
+    } else {
+      for (let i = 0; i < contentControls.items.length; i++) {
+        eventContexts[i] = contentControls.items[i].onExited.add(contentControlExited);
+        contentControls.items[i].track();
+      }
+
+      await context.sync();
+
+      console.log("Added event handlers for when the cursor is removed from within content controls.");
+    }
+  });
+}
+
+async function contentControlExited(event: Word.ContentControlExitedEventArgs) {
+  await Word.run(async (context) => {
+    console.log(`${event.eventType} event detected. ID of content control that was exited: ${event.ids[0]}`);
+  });
+}
+
+async function deregisterEventHandlers() {
+  await Word.run(async (context) => {
+    for (let i = 0; i < eventContexts.length; i++) {
+      await Word.run(eventContexts[i].context, async (context) => {
+        eventContexts[i].remove();
+      });
+    }
+
+    await context.sync();
+
+    eventContexts = [];
+    console.log("Removed event handlers that were tracking when the cursor is removed from within content controls.");
+  });
+}
+
+async function setup() {
+  await Word.run(async (context) => {
+    const body: Word.Body = context.document.body;
+    body.clear();
+    body.insertParagraph("One more paragraph.", "Start");
+    body.insertParagraph("Inserting another paragraph.", "Start");
+    body.insertParagraph(
+      "Do you want to create a solution that extends the functionality of Word? You can use the Office Add-ins platform to extend Word clients running on the web, on a Windows desktop, or on a Mac.",
+      "Start"
+    );
+    body.paragraphs
+      .getLast()
+      .insertText(
+        "Use add-in commands to extend the Word UI and launch task panes that run JavaScript that interacts with the content in a Word document. Any code that you can run in a browser can run in a Word add-in. Add-ins that interact with content in a Word document create requests to act on Word objects and synchronize object state.",
+        "Replace"
+      );
+  });
+}
+
+// Default helper for invoking an action and handling errors.
+async function tryCatch(callback) {
+  try {
+    await callback();
+  } catch (error) {
+    // Note: In a production add-in, you'd want to notify the user through your add-in's UI.
+    console.error(error);
+  }
+}
+```
+

@@ -1,0 +1,290 @@
+# Manage annotations
+
+Shows how to leverage the Writing Assistance API to manage annotations and use annotation events.
+
+This sample demonstrates how to manage annotations and use annotation events.
+
+    **Important**: You need a Microsoft 365 subscription in order to use Annotation APIs. See GitHub issue 4953 for more information.
+
+```typescript
+let eventContexts = [];
+
+async function registerEventHandlers() {
+  // Registers event handlers.
+  await Word.run(async (context) => {
+    eventContexts[0] = context.document.onParagraphAdded.add(paragraphChanged);
+    eventContexts[1] = context.document.onParagraphChanged.add(paragraphChanged);
+
+    eventContexts[2] = context.document.onAnnotationClicked.add(onClickedHandler);
+    eventContexts[3] = context.document.onAnnotationHovered.add(onHoveredHandler);
+    eventContexts[4] = context.document.onAnnotationInserted.add(onInsertedHandler);
+    eventContexts[5] = context.document.onAnnotationRemoved.add(onRemovedHandler);
+    eventContexts[6] = context.document.onAnnotationPopupAction.add(onPopupActionHandler);
+
+    await context.sync();
+
+    console.log("Event handlers registered.");
+  });
+}
+
+async function paragraphChanged(args: Word.ParagraphChangedEventArgs) {
+  await Word.run(async (context) => {
+    const results = [];
+    for (let id of args.uniqueLocalIds) {
+      let para = context.document.getParagraphByUniqueLocalId(id);
+      para.load("uniqueLocalId");
+
+      results.push({ para: para, text: para.getText() });
+    }
+
+    await context.sync();
+
+    for (let result of results) {
+      console.log(`${args.type}: ID ${result.para.uniqueLocalId}:-`, result.text.value);
+    }
+  });
+}
+
+async function insertAnnotations() {
+  // Adds annotations to the selected paragraph.
+  await Word.run(async (context) => {
+    const paragraph: Word.Paragraph = context.document.getSelection().paragraphs.getFirst();
+    const options: Word.CritiquePopupOptions = {
+      brandingTextResourceId: "PG.TabLabel",
+      subtitleResourceId: "PG.HelpCommand.TipTitle",
+      titleResourceId: "PG.HelpCommand.Label",
+      suggestions: ["suggestion 1", "suggestion 2", "suggestion 3"]
+    };
+    const critique1: Word.Critique = {
+      colorScheme: Word.CritiqueColorScheme.red,
+      start: 1,
+      length: 3,
+      popupOptions: options
+    };
+    const critique2: Word.Critique = {
+      colorScheme: Word.CritiqueColorScheme.green,
+      start: 6,
+      length: 1,
+      popupOptions: options
+    };
+    const critique3: Word.Critique = {
+      colorScheme: Word.CritiqueColorScheme.blue,
+      start: 10,
+      length: 3,
+      popupOptions: options
+    };
+    const critique4: Word.Critique = {
+      colorScheme: Word.CritiqueColorScheme.lavender,
+      start: 14,
+      length: 3,
+      popupOptions: options
+    };
+    const critique5: Word.Critique = {
+      colorScheme: Word.CritiqueColorScheme.berry,
+      start: 18,
+      length: 10,
+      popupOptions: options
+    };
+    const annotationSet: Word.AnnotationSet = {
+      critiques: [critique1, critique2, critique3, critique4, critique5]
+    };
+
+    const annotationIds = paragraph.insertAnnotations(annotationSet);
+
+    await context.sync();
+
+    console.log("Annotations inserted:", annotationIds.value);
+  });
+}
+
+async function getAnnotations() {
+  // Gets annotations found in the selected paragraph.
+  await Word.run(async (context) => {
+    const paragraph: Word.Paragraph = context.document.getSelection().paragraphs.getFirst();
+    const annotations: Word.AnnotationCollection = paragraph.getAnnotations();
+    annotations.load("id,state,critiqueAnnotation");
+
+    await context.sync();
+
+    console.log("Annotations found:");
+
+    for (let i = 0; i < annotations.items.length; i++) {
+      const annotation: Word.Annotation = annotations.items[i];
+
+      console.log(`ID ${annotation.id} - state '${annotation.state}':`, annotation.critiqueAnnotation.critique);
+    }
+  });
+}
+
+async function acceptFirst() {
+  // Accepts the first annotation found in the selected paragraph.
+  await Word.run(async (context) => {
+    const paragraph: Word.Paragraph = context.document.getSelection().paragraphs.getFirst();
+    const annotations: Word.AnnotationCollection = paragraph.getAnnotations();
+    annotations.load("id,state,critiqueAnnotation");
+
+    await context.sync();
+
+    for (let i = 0; i < annotations.items.length; i++) {
+      const annotation: Word.Annotation = annotations.items[i];
+
+      if (annotation.state === Word.AnnotationState.created) {
+        console.log(`Accepting ID ${annotation.id}...`);
+        annotation.critiqueAnnotation.accept();
+
+        await context.sync();
+        break;
+      }
+    }
+  });
+}
+
+async function rejectLast() {
+  // Rejects the last annotation found in the selected paragraph.
+  await Word.run(async (context) => {
+    const paragraph: Word.Paragraph = context.document.getSelection().paragraphs.getFirst();
+    const annotations: Word.AnnotationCollection = paragraph.getAnnotations();
+    annotations.load("id,state,critiqueAnnotation");
+
+    await context.sync();
+
+    for (let i = annotations.items.length - 1; i >= 0; i--) {
+      const annotation: Word.Annotation = annotations.items[i];
+
+      if (annotation.state === Word.AnnotationState.created) {
+        console.log(`Rejecting ID ${annotation.id}...`);
+        annotation.critiqueAnnotation.reject();
+
+        await context.sync();
+        break;
+      }
+    }
+  });
+}
+
+async function deleteAnnotations() {
+  // Deletes all annotations found in the selected paragraph.
+  await Word.run(async (context) => {
+    const paragraph: Word.Paragraph = context.document.getSelection().paragraphs.getFirst();
+    const annotations: Word.AnnotationCollection = paragraph.getAnnotations();
+    annotations.load("id");
+
+    await context.sync();
+
+    const ids = [];
+    for (let i = 0; i < annotations.items.length; i++) {
+      const annotation: Word.Annotation = annotations.items[i];
+
+      ids.push(annotation.id);
+      annotation.delete();
+    }
+
+    await context.sync();
+
+    console.log("Annotations deleted:", ids);
+  });
+}
+
+async function onClickedHandler(args: Word.AnnotationClickedEventArgs) {
+  await Word.run(async (context) => {
+    const annotation: Word.Annotation = context.document.getAnnotationById(args.id);
+    annotation.load("critiqueAnnotation");
+
+    await context.sync();
+
+    console.log(`AnnotationClicked: ID ${args.id}:`, annotation.critiqueAnnotation.critique);
+  });
+}
+
+async function onHoveredHandler(args: Word.AnnotationHoveredEventArgs) {
+  await Word.run(async (context) => {
+    const annotation: Word.Annotation = context.document.getAnnotationById(args.id);
+    annotation.load("critiqueAnnotation");
+
+    await context.sync();
+
+    console.log(`AnnotationHovered: ID ${args.id}:`, annotation.critiqueAnnotation.critique);
+  });
+}
+
+async function onInsertedHandler(args: Word.AnnotationInsertedEventArgs) {
+  await Word.run(async (context) => {
+    const annotations = [];
+    for (let i = 0; i < args.ids.length; i++) {
+      let annotation: Word.Annotation = context.document.getAnnotationById(args.ids[i]);
+      annotation.load("id,critiqueAnnotation");
+
+      annotations.push(annotation);
+    }
+
+    await context.sync();
+
+    for (let annotation of annotations) {
+      console.log(`AnnotationInserted: ID ${annotation.id}:`, annotation.critiqueAnnotation.critique);
+    }
+  });
+}
+
+async function onRemovedHandler(args: Word.AnnotationRemovedEventArgs) {
+  await Word.run(async (context) => {
+    for (let id of args.ids) {
+      console.log(`AnnotationRemoved: ID ${id}`);
+    }
+  });
+}
+
+async function onPopupActionHandler(args: Word.AnnotationPopupActionEventArgs) {
+  await Word.run(async (context) => {
+    let message = `AnnotationPopupAction: ID ${args.id} = `;
+    if (args.action === "Accept") {
+      message += `Accepted: ${args.critiqueSuggestion}`;
+    } else {
+      message += "Rejected";
+    }
+
+    console.log(message);
+  });
+}
+
+async function deregisterEventHandlers() {
+  // Deregisters event handlers.
+  await Word.run(async (context) => {
+    for (let i = 0; i < eventContexts.length; i++) {
+      await Word.run(eventContexts[i].context, async (context) => {
+        eventContexts[i].remove();
+      });
+    }
+
+    await context.sync();
+
+    eventContexts = [];
+    console.log("Removed event handlers.");
+  });
+}
+
+async function setup() {
+  await Word.run(async (context) => {
+    const body: Word.Body = context.document.body;
+    body.clear();
+    body.insertParagraph(
+      "Do you want to create a solution that extends the functionality of Word? You can use the Office Add-ins platform to extend Word clients running on the web, on a Windows desktop, or on a Mac.",
+      "Start"
+    );
+    body.insertParagraph(
+      "Use add-in commands to extend the Word UI and launch task panes that run JavaScript that interacts with the content in a Word document. Any code that you can run in a browser can run in a Word add-in. Add-ins that interact with content in a Word document create requests to act on Word objects and synchronize object state.",
+      "End"
+    );
+  });
+}
+
+// Default helper for invoking an action and handling errors.
+async function tryCatch(callback) {
+  try {
+    await callback();
+  } catch (error) {
+    // Note: In a production add-in, you'd want to notify the user through your add-in's UI.
+    console.error(error);
+  }
+}
+```
+
