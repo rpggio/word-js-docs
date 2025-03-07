@@ -7,7 +7,7 @@ Sources:
 - https://www.npmjs.com/package/@microsoft/office-js
 - https://github.com/OfficeDev/office-js-snippets/tree/main/samples/word
 
-Created 2/7/2025, not synchronized with latest.
+Created 3/7/2025, not synchronized with latest.
 
 ## Content
 
@@ -108,4 +108,3 @@ Created 2/7/2025, not synchronized with latest.
 
 - [Content control basics](samples/99-preview-apis/insert-and-change-content-controls.yaml) - 'Inserts, updates, and retrieves content controls.'
 - [Manage comments](samples/99-preview-apis/manage-comments.yaml) - 'This sample shows how to perform operations on comments (including insert, reply, get, edit, resolve, and delete) and use comment events.'
-
