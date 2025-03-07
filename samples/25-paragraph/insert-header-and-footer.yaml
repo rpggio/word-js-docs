@@ -1,0 +1,198 @@
+order: 5
+id: word-paragraph-insert-header-and-footer
+name: Insert headers and footers
+description: Inserts headers and footers in the document.
+author: OfficeDev
+host: WORD
+api_set:
+    WordApi: '1.1'
+script:
+    content: |
+        $("#add-header").on("click", () => tryCatch(addHeader));
+        $("#add-footer").on("click", () => tryCatch(addFooter));
+        $("#add-first-page-header").on("click", () => tryCatch(addFirstPageHeader));
+        $("#add-first-page-footer").on("click", () => tryCatch(addFirstPageFooter));
+        $("#add-even-pages-header").on("click", () => tryCatch(addEvenPagesHeader));
+        $("#add-even-pages-footer").on("click", () => tryCatch(addEvenPagesFooter));
+        $("#setup").on("click", () => tryCatch(setup));
+
+        async function addHeader() {
+          await Word.run(async (context) => {
+            context.document.sections
+              .getFirst()
+              .getHeader(Word.HeaderFooterType.primary)
+              .insertParagraph("This is a primary header.", "End");
+
+            await context.sync();
+          });
+        }
+
+        async function addFooter() {
+          await Word.run(async (context) => {
+            context.document.sections
+              .getFirst()
+              .getFooter("Primary")
+              .insertParagraph("This is a primary footer.", "End");
+
+            await context.sync();
+          });
+        }
+
+        async function addFirstPageHeader() {
+          await Word.run(async (context) => {
+            context.document.sections
+              .getFirst()
+              .getHeader("FirstPage")
+              .insertParagraph("This is a first-page header.", "End");
+
+            await context.sync();
+          });
+        }
+
+        async function addFirstPageFooter() {
+          await Word.run(async (context) => {
+            context.document.sections
+              .getFirst()
+              .getFooter(Word.HeaderFooterType.firstPage)
+              .insertParagraph("This is a first-page footer.", "End");
+
+            await context.sync();
+          });
+        }
+
+        async function addEvenPagesHeader() {
+          await Word.run(async (context) => {
+            context.document.sections
+              .getFirst()
+              .getHeader(Word.HeaderFooterType.evenPages)
+              .insertParagraph("This is an even-pages header.", "End");
+
+            await context.sync();
+          });
+        }
+
+        async function addEvenPagesFooter() {
+          await Word.run(async (context) => {
+            context.document.sections
+              .getFirst()
+              .getFooter("EvenPages")
+              .insertParagraph("This is an even-pages footer.", "End");
+
+            await context.sync();
+          });
+        }
+
+        async function setup() {
+          await Word.run(async (context) => {
+            // Set up text in the document body.
+            const body: Word.Body = context.document.body;
+            body.clear();
+            body.insertParagraph(
+              "HeaderFooterType.firstPage applies the header or footer to the first page of the current section. HeaderFooterType.evenPages applies the header or footer to the even pages of the current section. By default, HeaderFooterType.primary applies the header or footer to all pages in the current section. However, if either or both options for FirstPage and EvenPages are set, Primary excludes those pages.",
+              "Start"
+            );
+            body.insertBreak(Word.BreakType.page, Word.InsertLocation.end);
+            body.insertParagraph(
+              "Do you want to create a solution that extends the functionality of Word? You can use the Office Add-ins platform to extend Word clients running on the web, on a Windows desktop, or on a Mac.",
+              "End"
+            );
+            body.insertBreak(Word.BreakType.page, Word.InsertLocation.end);
+            body.insertParagraph(
+              "Use add-in commands to extend the Word UI and launch task panes that run JavaScript that interacts with the content in a Word document. Any code that you can run in a browser can run in a Word add-in. Add-ins that interact with content in a Word document create requests to act on Word objects and synchronize object state.",
+              "End"
+            );
+
+            // Clear any headers and footers.
+            const section: Word.Section = context.document.sections.getFirst();
+
+            section.getHeader("Primary").clear();
+            section.getHeader("FirstPage").clear();
+            section.getHeader("EvenPages").clear();
+
+            section.getFooter("Primary").clear();
+            section.getFooter("FirstPage").clear();
+            section.getFooter("EvenPages").clear();
+          });
+        }
+
+        // Default helper for invoking an action and handling errors.
+        async function tryCatch(callback) {
+          try {
+            await callback();
+          } catch (error) {
+            // Note: In a production add-in, you'd want to notify the user through your add-in's UI.
+            console.error(error);
+          }
+        }
+    language: typescript
+template:
+    content: |-
+        <section class="ms-Fabric ms-font-m">
+            This sample inserts headers and footers in the document.
+        </section>
+
+        <section class="ms-Fabric setup ms-font-m">
+            <h3>Set up</h3>
+            <p>1. Set up sample text.
+            <button id="setup" class="ms-Button">
+                <span class="ms-Button-label">Add sample text</span>
+            </button>
+            <p>2. Open the <b>Header & Footer</b> ribbon (refer to <a target="_blank" href="https://support.microsoft.com/office/490423a3-3e5b-4080-aff0-c429ab5d6708">Edit your
+                existing headers and footers</a> for details).
+        </section>
+
+        <section class="ms-Fabric samples ms-font-m">
+            <h3>Try it out</h3>
+            <h4>Apply to all pages</h4>
+            <button id="add-header" class="ms-Button">
+            <span class="ms-Button-label">Insert header</span>
+          </button>
+            <button id="add-footer" class="ms-Button">
+            <span class="ms-Button-label">Insert footer</span>
+          </button>
+            <div>To see the "Primary" header/footer in the document, turn off the <b>Different First Page</b> and
+                <b>Different Odd & Even Pages</b> options in the
+                <b>Header & Footer</b> ribbon.</div>
+            <h4>Apply to the first page</h4>
+            <button id="add-first-page-header" class="ms-Button">
+              <span class="ms-Button-label">Insert header</span>
+            </button>
+            <button id="add-first-page-footer" class="ms-Button">
+              <span class="ms-Button-label">Insert footer</span>
+            </button>
+            <div>To see the "FirstPage" header/footer in the document, turn on the <b>Different First Page</b> option in the <b>Header & Footer</b> ribbon then scroll to the first page.</div>
+            <h4>Apply to all even pages</h4>
+            <button id="add-even-pages-header" class="ms-Button">
+                <span class="ms-Button-label">Insert header</span>
+            </button>
+            <button id="add-even-pages-footer" class="ms-Button">
+              <span class="ms-Button-label">Insert footer</span>
+            </button>
+            <div>To see the "EvenPages" header/footer in the document, turn on the <b>Different Odd & Even Pages</b> option in the <b>Header & Footer</b> ribbon then scroll to an even-numbered page.</div>
+        </section>
+    language: html
+style:
+    content: |-
+        section.samples {
+            margin-top: 20px;
+        }
+
+        section.samples .ms-Button, section.setup .ms-Button {
+            display: block;
+            margin-bottom: 5px;
+            margin-left: 20px;
+            min-width: 80px;
+        }
+    language: css
+libraries: |-
+    https://appsforoffice.microsoft.com/lib/1/hosted/office.js
+    @types/office-js
+
+    office-ui-fabric-core@11.1.0/dist/css/fabric.min.css
+    office-ui-fabric-js@1.5.0/dist/css/fabric.components.min.css
+
+    core-js@2.4.1/client/core.min.js
+    @types/core-js
+
+    jquery@3.1.1
+    @types/jquery@3.3.1
