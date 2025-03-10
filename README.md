@@ -9,13 +9,17 @@ Sources:
 
 Sources copied 3/7/2025, not synchronized with latest.
 
-## Output
+## Browsable URL
 
-[Generated docs](./docs/index.md)
+https://rpggio.github.io/word-js-docs/
 
-## Dev
+## Usage with Cursor IDE
 
-Generated markdown from yaml files:
+Cursor cannot crawl these docs for some reason, so you must clone this repo and add `docs` dir to your IDE workspace 🤷‍♂️.
+
+## Update
+
+Generate markdown from yaml files:
 
 ```
 npm install
